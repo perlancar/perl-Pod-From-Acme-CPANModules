@@ -47,6 +47,7 @@ sub gen_pod_from_acme_cpanmodules {
         my $mod_pm = $mod; $mod_pm =~ s!::!/!g; $mod_pm .= ".pm";
         require $mod_pm;
         $list = ${"$mod\::LIST"};
+        ref($list) eq 'HASH' or die "Module $mod doesn't defined \$LIST";
     }
 
     $res->{raw} = $list;
@@ -56,7 +57,8 @@ sub gen_pod_from_acme_cpanmodules {
 
         {
             my $pod = '';
-            $pod .= "$list->{summary}\n\n" if $list->{summary};
+            $pod .= "$list->{summary}".($list->{summary} =~ /\.$/ ? "" : ".")."\n\n"
+                if $list->{summary};
             $pod .= _markdown_to_pod($list->{description})."\n\n"
                 if $list->{description} && $list->{description} =~ /\S/;
             $res->{pod}{DESCRIPTION} = $pod if $pod;
@@ -77,7 +79,7 @@ sub gen_pod_from_acme_cpanmodules {
                     if $ent->{alternate_modules} && @{ $ent->{alternate_modules} };
             }
             $pod .= "=back\n\n";
-            $res->{pod}{'INCLUDED MODULES'} .= $text;
+            $res->{pod}{'INCLUDED MODULES'} .= $pod;
         }
     }
 
