@@ -81,6 +81,14 @@ sub gen_pod_from_acme_cpanmodules {
             $pod .= "=back\n\n";
             $res->{pod}{'INCLUDED MODULES'} .= $pod;
         }
+
+        {
+            require Acme::CPANModulesUtil::FeatureMatrix;
+            my $fres = Acme::CPANModulesUtil::FeatureMatrix::draw_feature_matrix(_list => $list);
+            last if $fres->[0] != 200;
+            $res->{pod}{'FEATURE COMPARISON MATRIX'} = $fres->[2];
+        }
+
     }
 
     $res;
