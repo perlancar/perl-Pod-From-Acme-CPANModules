@@ -1,6 +1,8 @@
 package Pod::From::Acme::CPANModules;
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -19,7 +21,18 @@ sub _markdown_to_pod {
 
 $SPEC{gen_pod_from_acme_cpanmodules} = {
     v => 1.1,
-    summary => 'Create "INCLUDED MODULES" POD sections from $LIST',
+    summary => 'Generate POD from an Acme::CPANModules::* module',
+    description => <<'_',
+
+Currently what this routine does:
+
+* Fill the Description section from the CPANModules' list description
+
+* Add an Included Modules section, containing the CPANModules' list entries
+
+* Add a Feature Comparison Matrix section, if one or more entries have 'features'
+
+_
     args_rels => {
         req_one => [qw/module author_lists/],
         choose_all => [qw/author_lists module_lists/],
