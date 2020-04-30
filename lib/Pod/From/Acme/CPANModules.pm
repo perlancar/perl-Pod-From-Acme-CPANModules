@@ -57,8 +57,6 @@ sub gen_pod_from_acme_cpanmodules {
 
         {
             my $pod = '';
-            $pod .= "$list->{summary}".($list->{summary} =~ /\.$/ ? "" : ".")."\n\n"
-                if $list->{summary};
             $pod .= _markdown_to_pod($list->{description})."\n\n"
                 if $list->{description} && $list->{description} =~ /\S/;
             $res->{pod}{DESCRIPTION} = $pod if $pod;
