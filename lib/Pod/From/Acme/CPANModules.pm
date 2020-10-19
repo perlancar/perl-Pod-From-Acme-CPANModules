@@ -90,7 +90,7 @@ sub gen_pod_from_acme_cpanmodules {
                     if $ent->{alternate_modules} && @{ $ent->{alternate_modules} };
             }
             $pod .= "=back\n\n";
-            $res->{pod}{'MODULES INCLUDED IN THIS ACME::CPANMODULE MODULE'} .= $pod;
+            $res->{pod}{'MODULES INCLUDED IN THIS ACME::CPANMODULES MODULE'} .= $pod;
         }
 
         {
