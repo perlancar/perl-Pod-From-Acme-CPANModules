@@ -1,3 +1,8 @@
+0.006   2020-10-19  Released-By: PERLANCAR; Urgency: medium
+
+	- Fix typo.
+
+
 0.005   2020-09-15  Released-By: PERLANCAR; Urgency: medium
 
 	- Rename generated POD sections: Included Modules -> Modules
