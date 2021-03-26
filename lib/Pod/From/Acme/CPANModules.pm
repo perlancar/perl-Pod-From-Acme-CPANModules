@@ -108,7 +108,7 @@ sub gen_pod_from_acme_cpanmodules {
                 }
             }
             $pod .= "=back\n\n";
-            $res->{pod}{'ACME::MODULES ENTRIES'} .= $pod;
+            $res->{pod}{'ACME::CPANMODULES ENTRIES'} .= $pod;
         }
 
         {
