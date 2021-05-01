@@ -28,9 +28,9 @@ Currently what this routine does:
 
 * Fill the Description section from the CPANModules' list description
 
-* Add an Included Modules section, containing the CPANModules' list entries
+* Add an "Acme::CPANModules Entries" section, containing the CPANModules' list entries
 
-* Add a Feature Comparison Matrix section, if one or more entries have 'features'
+* Add an "Acme::CPANModules Feature Comparison Matrix" section, if one or more entries have 'features'
 
 _
     args_rels => {
@@ -46,6 +46,9 @@ _
             summary => 'As an alternative to `module`, you can directly supply $LIST here',
             schema => 'hash*',
         },
+        entry_description_code => {
+            schema => 'code*',
+        },
     },
     result_naked => 1,
 };
@@ -53,6 +56,12 @@ sub gen_pod_from_acme_cpanmodules {
     my %args = @_;
 
     my $res = {};
+    if ($args{entry_description_code}) {
+        if (ref $args{entry_description_code} ne 'CODE') {
+            $args{entry_description_code} = eval "sub { $args{entry_description_code} }";
+            die "Can't compile Perl code in entry_description_code argument: $@" if $@;
+        }
+    }
 
     my $list = $args{list};
     if (my $mod = $args{module}) {
@@ -80,24 +89,33 @@ sub gen_pod_from_acme_cpanmodules {
             $pod .= "=over\n\n";
             for my $ent (@{ $list->{entries} }) {
                 $pod .= "=item * L<$ent->{module}>".($ent->{summary} ? " - $ent->{summary}" : "")."\n\n";
-                $pod .= _markdown_to_pod($ent->{description})."\n\n"
-                    if $ent->{description} && $ent->{description} =~ /\S/;
-                $pod .= "Rating: $ent->{rating}/10\n\n"
-                    if $ent->{rating} && $ent->{rating} =~ /\A[1-9]\z/;
-                $pod .= "Related modules: ".join(", ", map {"L<$_>"} @{ $ent->{related_modules} })."\n\n"
-                    if $ent->{related_modules} && @{ $ent->{related_modules} };
-                $pod .= "Alternate modules: ".join(", ", map {"L<$_>"} @{ $ent->{alternate_modules} })."\n\n"
-                    if $ent->{alternate_modules} && @{ $ent->{alternate_modules} };
+                if ($args{entry_description_code}) {
+                    my $res;
+                    {
+                        local $_ = $ent;
+                        $res = $args{entry_description_code}->($ent);
+                    }
+                    $pod .= $res;
+                } else {
+                    $pod .= _markdown_to_pod($ent->{description})."\n\n"
+                        if $ent->{description} && $ent->{description} =~ /\S/;
+                    $pod .= "Rating: $ent->{rating}/10\n\n"
+                        if $ent->{rating} && $ent->{rating} =~ /\A[1-9]\z/;
+                    $pod .= "Related modules: ".join(", ", map {"L<$_>"} @{ $ent->{related_modules} })."\n\n"
+                        if $ent->{related_modules} && @{ $ent->{related_modules} };
+                    $pod .= "Alternate modules: ".join(", ", map {"L<$_>"} @{ $ent->{alternate_modules} })."\n\n"
+                        if $ent->{alternate_modules} && @{ $ent->{alternate_modules} };
+                }
             }
             $pod .= "=back\n\n";
-            $res->{pod}{'MODULES INCLUDED IN THIS ACME::CPANMODULES MODULE'} .= $pod;
+            $res->{pod}{'ACME::CPANMODULES ENTRIES'} .= $pod;
         }
 
         {
             require Acme::CPANModulesUtil::FeatureMatrix;
             my $fres = Acme::CPANModulesUtil::FeatureMatrix::draw_feature_matrix(_list => $list);
             last if $fres->[0] != 200;
-            $res->{pod}{'FEATURE COMPARISON MATRIX OF MODULES INCLUDED IN THIS ACME::CPANMODULES MODULE'} = $fres->[2];
+            $res->{pod}{'ACME::CPANMODULES FEATURE COMPARISON MATRIX'} = $fres->[2];
         }
 
     }
