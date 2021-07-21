@@ -1,3 +1,11 @@
+0.010   2021-07-21  Released-By: PERLANCAR; Urgency: medium
+
+	- Show author (from lcpan if available) and scripts for each entry.
+
+	- [ux] When entry does not have summary, use module Abstract (from lcpan
+          if available).
+
+
 0.009   2021-05-01  Released-By: PERLANCAR; Urgency: high
 
         - Merge releases 0.006 & 0.006.2.
