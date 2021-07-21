@@ -84,6 +84,7 @@ sub gen_pod_from_acme_cpanmodules {
         }
 
         my %mod_abstracts; # key: module name, value: abstract
+        my %mod_authors; # key: module name, value: author
       GET_MODULE_ABSTRACTS: {
             last unless @mods;
             require App::lcpan::Call;
@@ -99,6 +100,7 @@ sub gen_pod_from_acme_cpanmodules {
             }
             for (@{$res->[2]}) {
                 $mod_abstracts{ $_->{module} } = $_->{abstract} if defined $_->{abstract} && length $_->{abstract};
+                $mod_authors{ $_->{module} } = $_->{author};
             }
         }
 
@@ -127,6 +129,10 @@ sub gen_pod_from_acme_cpanmodules {
                     }
                     $pod .= $res;
                 } else {
+                    my $author = $mod_authors{$ent->{module}};
+                    if ($author) {
+                        $pod .= "Author: L<$author|https://metacpan.org/author/$author>\n\n";
+                    }
                     $pod .= _markdown_to_pod($ent->{description})."\n\n"
                         if $ent->{description} && $ent->{description} =~ /\S/;
                     $pod .= "Rating: $ent->{rating}/10\n\n"
