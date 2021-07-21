@@ -105,6 +105,14 @@ sub gen_pod_from_acme_cpanmodules {
                         if $ent->{related_modules} && @{ $ent->{related_modules} };
                     $pod .= "Alternate modules: ".join(", ", map {"L<$_>"} @{ $ent->{alternate_modules} })."\n\n"
                         if $ent->{alternate_modules} && @{ $ent->{alternate_modules} };
+
+                    my @scripts;
+                    for ("script", "scripts") {
+                        push @scripts, (ref $ent->{$_} eq 'ARRAY' ? @{$ent->{$_}} : $ent->{$_}) if defined $ent->{$_};
+                    }
+                    if (@scripts) {
+                        $pod .= "Script".(@scripts > 1 ? "s":"").": ".join(", ", map {"L<$_>"} @scripts)."\n\n";
+                    }
                 }
             }
             $pod .= "=back\n\n";
