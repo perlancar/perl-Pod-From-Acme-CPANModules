@@ -8,6 +8,7 @@ package Pod::From::Acme::CPANModules;
 use 5.010001;
 use strict;
 use warnings;
+use Log::ger;
 
 use Exporter qw(import);
 our @EXPORT_OK = qw(gen_pod_from_acme_cpanmodules);
@@ -77,6 +78,30 @@ sub gen_pod_from_acme_cpanmodules {
     if ($list) {
         $res->{pod} = {};
 
+        my @mods;
+        for my $ent (@{ $list->{entries} }) {
+            push @mods, $ent->{module};
+        }
+
+        my %mod_abstracts; # key: module name, value: abstract
+      GET_MODULE_ABSTRACTS: {
+            last unless @mods;
+            require App::lcpan::Call;
+            my $res = App::lcpan::Call::check_lcpan();
+            unless ($res->[0] == 200) {
+                log_info "lcpan database is not available (%s), skipping retrieving module abstracts", $res;
+                last;
+            }
+            $res = App::lcpan::Call::call_lcpan_script(argv=>["mods", "-l", "-x", "--or", @mods]);
+            unless ($res->[0] == 200) {
+                log_info "Can't lcpan mods: %s, skipping retrieving module abstracts", $res;
+                last;
+            }
+            for (@{$res->[2]}) {
+                $mod_abstracts{ $_->{module} } = $_->{abstract} if defined $_->{abstract} && length $_->{abstract};
+            }
+        }
+
         {
             my $pod = '';
             $pod .= _markdown_to_pod($list->{description})."\n\n"
@@ -88,7 +113,12 @@ sub gen_pod_from_acme_cpanmodules {
             my $pod = '';
             $pod .= "=over\n\n";
             for my $ent (@{ $list->{entries} }) {
-                $pod .= "=item * L<$ent->{module}>".($ent->{summary} ? " - $ent->{summary}" : "")."\n\n";
+                my $summary = $ent->{summary} //
+                    (defined $mod_abstracts{$ent->{module}} ?
+                     #"$mod_abstracts{$ent->{module}} (from module's Abstract)" :
+                     "$mod_abstracts{$ent->{module}}" :
+                     undef);
+                $pod .= "=item * L<$ent->{module}>".($summary ? " - $summary" : "")."\n\n";
                 if ($args{entry_description_code}) {
                     my $res;
                     {
