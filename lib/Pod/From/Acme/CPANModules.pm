@@ -121,7 +121,11 @@ sub gen_pod_from_acme_cpanmodules {
                      #"$mod_abstracts{$ent->{module}} (from module's Abstract)" :
                      "$mod_abstracts{$ent->{module}}" :
                      undef);
-                $pod .= "=item * L<$ent->{module}>".($summary ? " - $summary" : "")."\n\n";
+                $pod .= "=item L<$ent->{module}>\n\n";
+                if (defined $ent->{summary}) {
+                    require String::PodQuote;
+                    $pod .= String::PodQuote::pod_quote($ent->{summary}) . ".\n\n";
+                }
                 if ($args{entry_description_code}) {
                     my $res;
                     {

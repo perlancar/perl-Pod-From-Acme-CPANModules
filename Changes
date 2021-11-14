@@ -1,3 +1,8 @@
+0.011   2021-07-26  Released-By: PERLANCAR; Urgency: medium
+
+	- Linkify entry heading.
+
+
 0.010   2021-07-21  Released-By: PERLANCAR; Urgency: medium
 
 	- Show author (from lcpan if available) and scripts for each entry.
