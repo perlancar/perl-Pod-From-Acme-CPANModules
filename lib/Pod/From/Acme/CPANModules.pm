@@ -50,6 +50,61 @@ _
         },
         entry_description_code => {
             schema => 'code*',
+            description => <<'_',
+
+This lets you completely customize the description POD for each entry, using Perl
+code. The Perl code will receive the entry hashref as its argument and is expected to produce
+a POD string.
+
+See also the `additional_props` option.
+
+_
+        },
+        additional_props => {
+            schema => ['array*', of=>'str*'],
+            description => <<'_',
+
+This lets you include additional properties (or attributes) from the entry
+defhash to the POD. This option will not be used if you completely customize the
+entry POD output using the `entry_description_code` option. This option is an
+alternative when you want to display some additional properties/attributes in
+the entry as POD but does not want to completely customize the POD yourself.
+
+The element of this option is property/attribute name, optionally followed by
+":..." suffix to set the caption to show it with, then optionally followed by
+formatting suffix:
+
+- ":url" to render it as a link (`L<...>`)
+- ":mono" suffix to render it in monospace characters (`C<...>`)
+- ":quoted" (the default) to render it normally but quote it first using
+  <pm:String::PodQuote>
+- ":perl:..." to let a Perl code format it.
+
+Example:
+
+    # option
+    additional_props => [
+        q(ruby_package:Ruby project's gem:perl:"https://rubygems.org/gems/$_[0]"),
+        "ruby_website_url:Ruby project's website:url",
+    ],
+
+with this entry:
+
+    {
+        module => "Valiant",
+        ruby_package => "rails",
+        ruby_website_url => "https://rubyonrails.org",
+    }
+
+the additional POD produced will be something like:
+
+    Ruby project's gem: L<https://rubygems.org/gems/rails>
+
+    Ruby project's website: L<https://rubyonrails.org>
+
+See also the `entry_description_code` option.
+
+_
         },
     },
     result_naked => 1,
@@ -113,9 +168,13 @@ sub gen_pod_from_acme_cpanmodules {
         }
 
         {
+            require String::PodQuote;
+
             my $pod = '';
             $pod .= "=over\n\n";
+            my $i = -1;
             for my $ent (@{ $list->{entries} }) {
+                $i++;
                 my $summary = $ent->{summary} //
                     (defined $mod_abstracts{$ent->{module}} ?
                      #"$mod_abstracts{$ent->{module}} (from module's Abstract)" :
@@ -123,7 +182,6 @@ sub gen_pod_from_acme_cpanmodules {
                      undef);
                 $pod .= "=item L<$ent->{module}>\n\n";
                 if (defined $ent->{summary}) {
-                    require String::PodQuote;
                     $pod .= String::PodQuote::pod_quote($ent->{summary}) . ".\n\n";
                 }
                 if ($args{entry_description_code}) {
@@ -154,6 +212,41 @@ sub gen_pod_from_acme_cpanmodules {
                     if (@scripts) {
                         $pod .= "Script".(@scripts > 1 ? "s":"").": ".join(", ", map {"L<$_>"} @scripts)."\n\n";
                     }
+
+                    if ($args{additional_props}) {
+                      PROP:
+                        for my $prop0 (@{ $args{additional_props} }) {
+                            my $prop = $prop0;
+                            my $title;
+                            $prop =~ s/\A(.+?)\:([^:]*)/$1/ and $title = $2;
+                            $title //= $prop;
+                            my $format;
+                            $prop =~ s/\:(.+)\z// and $format = $1;
+                            $format //= "quoted";
+                            unless (exists $ent->{$prop}) {
+                                log_trace "Entry does not have '%s' property/attribute, not adding it to POD output";
+                                next PROP;
+                            }
+                            $pod .= "$title: ";
+                            if ($format eq 'quoted') {
+                                $pod .= String::PodQuote::pod_quote($ent->{$prop});
+                            } elsif ($format eq 'url') {
+                                $pod .= "L<$ent->{$prop}>";
+                            } elsif ($format eq 'mono') {
+                                $pod .= "C<$ent->{$prop}>";
+                            } elsif ($format =~ /\Aperl:(.+)/) {
+                                # XXX perl code is re-eval()-ed for each entry
+                                my $code0 = "package main; no strict; no warnings; sub { $1 }";
+                                my $code = eval $code0;
+                                die "Cannot eval '$code0' for property '$prop' in entry[$i] (module $ent->{module}): $@" if $@;
+                                $pod .= $code->($ent->{$prop});
+                            } else {
+                                die "Unknown format '$format' for property '$prop' in entry[$i] (module $ent->{module})";
+                            }
+                            $pod .= "\n\n";
+                        }
+                    }
+
                 }
             }
             $pod .= "=back\n\n";
