@@ -1,16 +1,17 @@
 package Pod::From::Acme::CPANModules;
 
-# AUTHORITY
-# DATE
-# DIST
-# VERSION
-
 use 5.010001;
 use strict;
 use warnings;
 use Log::ger;
 
 use Exporter qw(import);
+
+# AUTHORITY
+# DATE
+# DIST
+# VERSION
+
 our @EXPORT_OK = qw(gen_pod_from_acme_cpanmodules);
 
 our %SPEC;
