@@ -115,14 +115,14 @@ sub gen_pod_from_acme_cpanmodules {
     my $res = {};
     if ($args{entry_description_code}) {
         if (ref $args{entry_description_code} ne 'CODE') {
-            $args{entry_description_code} = eval "sub { $args{entry_description_code} }";
+            $args{entry_description_code} = eval "sub { $args{entry_description_code} }"; ## no critic: BuiltinFunctions::ProhibitStringyEval
             die "Can't compile Perl code in entry_description_code argument: $@" if $@;
         }
     }
 
     my $list = $args{list};
     if (my $mod = $args{module}) {
-        no strict 'refs';
+        no strict 'refs'; ## no critic: TestingAndDebugging::ProhibitNoStrict
         my $mod_pm = $mod; $mod_pm =~ s!::!/!g; $mod_pm .= ".pm";
         require $mod_pm;
         $list = ${"$mod\::LIST"};
@@ -237,7 +237,7 @@ sub gen_pod_from_acme_cpanmodules {
                             } elsif ($format =~ /\Aperl:(.+)/) {
                                 # XXX perl code is re-eval()-ed for each entry
                                 my $code0 = "package main; no strict; no warnings; sub { $1 }";
-                                my $code = eval $code0;
+                                my $code = eval $code0; ## no critic: BuiltinFunctions::ProhibitStringyEval
                                 die "Cannot eval '$code0' for property '$prop' in entry[$i] (module $ent->{module}): $@" if $@;
                                 $pod .= $code->($ent->{$prop});
                             } else {
